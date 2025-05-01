@@ -4,6 +4,7 @@ import '../../../_init';
 
 // Import the database functions
 import { getUserTestHistory, getTestQuestionResponses } from '@/db/test-history-db';
+import { ensureUserExists } from '@/db/user-db';
 
 // Import the safeDbOperation function
 import { safeDbOperation } from '../../route';
@@ -25,6 +26,12 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
   try {
     console.log(`Fetching test history detail for ID: ${testHistoryId}`);
+    
+    // Ensure the user exists in the database to prevent foreign key constraint errors
+    await safeDbOperation(
+      async () => await ensureUserExists(userId!),
+      false
+    );
     
     // Get the test history entries for this user
     const userHistory = await safeDbOperation(

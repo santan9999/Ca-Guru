@@ -45,6 +45,7 @@ export async function initializeSchemas(): Promise<void> {
     console.log('Initializing database schemas...');
     
     // Execute schema files in order
+    await executeSqlFile(path.join(schemasDir, 'users-schema.sql'));
     await executeSqlFile(path.join(schemasDir, 'progress-tracking-schema.sql'));
     await executeSqlFile(path.join(schemasDir, 'test-history-schema.sql'));
     await executeSqlFile(path.join(schemasDir, 'adaptive-learning-schema.sql'));
