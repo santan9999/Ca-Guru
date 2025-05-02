@@ -20,6 +20,21 @@ export type Question = {
   marks?: number; // Marks allocated to this question
 };
 
+// Enhanced, persistent cache for generated questions with TTL
+const questionCache: Record<string, {
+  questions: Question[],
+  timestamp: number
+}> = {};
+
+// Cache TTL in milliseconds (24 hours)
+const CACHE_TTL = 24 * 60 * 60 * 1000;
+
+/**
+ * Helper function to delay execution for a specified time
+ * @param ms - Time to delay in milliseconds
+ */
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 /**
  * Generate a system prompt for creating CA exam questions
  */
@@ -61,8 +76,11 @@ export async function generateQuestion(
     // Generate the system prompt for question creation
     const systemPrompt = generateQuestionPrompt(subject, difficulty, examLevel, questionType);
     
-    // Get response from DeepSeek API
-    const response = await generateDeepSeekResponse(systemPrompt, `Create a ${difficulty} ${questionType} question for ${subject}`);
+    // Generate a shorter prompt to reduce processing time
+    const userPrompt = `Create a ${difficulty} ${questionType} question on ${subject} in JSON format only.`;
+    
+    // Get response from DeepSeek API with a shorter timeout
+    const response = await generateDeepSeekResponse(systemPrompt, userPrompt);
     
     // Parse the JSON response
     let questionData;
@@ -183,8 +201,51 @@ function generateFallbackQuestion(
   };
 }
 
-// Simple in-memory cache for generated questions to avoid duplicate API calls
-const questionCache: Record<string, Question[]> = {};
+/**
+ * Generate more fallback questions for immediate display
+ */
+export function generateMultipleFallbackQuestions(
+  subject: string,
+  difficulty: 'Easy' | 'Medium' | 'Hard',
+  examLevel: 'Foundation' | 'Intermediate' | 'Final',
+  count: number,
+  paperType: 'Subjective' | 'Objective' | 'Mixed'
+): Question[] {
+  const questions: Question[] = [];
+  
+  // Determine distribution of question types
+  let mcqCount = 0;
+  let subjectiveCount = 0;
+  
+  switch (paperType) {
+    case 'Objective':
+      mcqCount = count;
+      break;
+    case 'Subjective':
+      subjectiveCount = count;
+      break;
+    case 'Mixed':
+      mcqCount = Math.ceil(count * 0.7);
+      subjectiveCount = count - mcqCount;
+      break;
+  }
+  
+  // Generate MCQ fallback questions
+  for (let i = 0; i < mcqCount; i++) {
+    questions.push(generateFallbackQuestion(
+      subject, difficulty, examLevel, 'MCQ', i, 'Immediate fallback'
+    ));
+  }
+  
+  // Generate subjective fallback questions
+  for (let i = 0; i < subjectiveCount; i++) {
+    questions.push(generateFallbackQuestion(
+      subject, difficulty, examLevel, 'Subjective', mcqCount + i, 'Immediate fallback'
+    ));
+  }
+  
+  return questions;
+}
 
 /**
  * Generate a cache key for storing/retrieving questions
@@ -194,13 +255,15 @@ function generateCacheKey(subject: string, difficulty: string, examLevel: string
 }
 
 /**
- * Helper function to delay execution for a specified time
- * @param ms - Time to delay in milliseconds
+ * Check if a cached entry is still valid
  */
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+function isCacheValid(cacheEntry: { questions: Question[], timestamp: number }): boolean {
+  const now = Date.now();
+  return now - cacheEntry.timestamp < CACHE_TTL;
+}
 
 /**
- * Generate multiple questions for a mock test with optimized batch processing
+ * Generate multiple questions for a mock test with optimized batch processing and caching
  */
 export async function generateQuestionsForTest(
   subject: string,
@@ -211,84 +274,122 @@ export async function generateQuestionsForTest(
 ): Promise<Question[]> {
   console.time('Question generation time');
   
-  // Check if we have cached questions for this combination
+  // Check if we have valid cached questions for this combination
   const cacheKey = generateCacheKey(subject, difficulty, examLevel, paperType);
-  if (questionCache[cacheKey] && questionCache[cacheKey].length >= questionCount) {
+  const cachedData = questionCache[cacheKey];
+  
+  if (cachedData && isCacheValid(cachedData) && cachedData.questions.length >= questionCount) {
     console.log(`Using ${questionCount} cached questions for ${subject}`);
     console.timeEnd('Question generation time');
-    return questionCache[cacheKey].slice(0, questionCount);
+    return cachedData.questions.slice(0, questionCount);
   }
   
-  const questions: Question[] = [];
+  // Generate immediate fallback questions to return quickly
+  const fallbackQuestions = generateMultipleFallbackQuestions(
+    subject, difficulty, examLevel, questionCount, paperType
+  );
   
-  // Determine the distribution of question types based on paper type
-  let mcqCount = 0;
-  let subjectiveCount = 0;
+  // Set fallback questions in cache with current timestamp
+  questionCache[cacheKey] = {
+    questions: fallbackQuestions,
+    timestamp: Date.now()
+  };
   
-  switch (paperType) {
-    case 'Objective':
-      mcqCount = questionCount;
-      break;
-    case 'Subjective':
-      subjectiveCount = questionCount;
-      break;
-    case 'Mixed':
-      // For mixed papers, distribute questions with more weight to MCQs
-      mcqCount = Math.ceil(questionCount * 0.7); // 70% MCQs
-      subjectiveCount = questionCount - mcqCount; // 30% Subjective
-      break;
-  }
+  // Start asynchronous generation of real questions
+  generateRealQuestionsAsync(subject, difficulty, examLevel, questionCount, paperType, cacheKey)
+    .catch(error => console.error('Background question generation error:', error));
   
-  // Reduce batch sizes to avoid overwhelming the API
-  // Generate MCQ questions in smaller batches
-  if (mcqCount > 0) {
-    const mcqPromises = Array.from({ length: mcqCount }, (_, i) => 
-      generateQuestion(subject, difficulty, examLevel, 'MCQ', i)
-    );
-    
-    // Process in smaller batches to avoid overwhelming the API
-    const batchSize = 2;
-    for (let i = 0; i < mcqPromises.length; i += batchSize) {
-      const batch = mcqPromises.slice(i, i + batchSize);
-      const batchResults = await Promise.all(batch);
-      questions.push(...batchResults);
-      console.log(`Generated batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(mcqPromises.length/batchSize)} of MCQ questions`);
-      
-      // Add a delay between batches to avoid overwhelming the API
-      if (i + batchSize < mcqPromises.length) {
-        const waitTime = 2000 + Math.random() * 1000; // 2-3 second delay
-        console.log(`Waiting ${Math.round(waitTime)}ms before next batch...`);
-        await delay(waitTime);
-      }
-    }
-  }
-  
-  // Generate subjective questions in smaller batches
-  if (subjectiveCount > 0) {
-    const subjPromises = Array.from({ length: subjectiveCount }, (_, i) => 
-      generateQuestion(subject, difficulty, examLevel, 'Subjective', mcqCount + i)
-    );
-    
-    // Process in smaller batches for subjective questions as they're more complex
-    const batchSize = 1; // Process subjective questions one at a time
-    for (let i = 0; i < subjPromises.length; i += batchSize) {
-      const batch = subjPromises.slice(i, i + batchSize);
-      const batchResults = await Promise.all(batch);
-      questions.push(...batchResults);
-      console.log(`Generated batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(subjPromises.length/batchSize)} of subjective questions`);
-      
-      // Add a longer delay between subjective questions as they're more complex
-      if (i + batchSize < subjPromises.length) {
-        const waitTime = 3000 + Math.random() * 2000; // 3-5 second delay
-        console.log(`Waiting ${Math.round(waitTime)}ms before next subjective question...`);
-        await delay(waitTime);
-      }
-    }
-  }
-  
-  // Cache the generated questions for future use
-  questionCache[cacheKey] = [...questions];
-  
+  // Return fallback questions immediately for fast response
   console.timeEnd('Question generation time');
-  return questions;
+  return fallbackQuestions;
+}
+
+/**
+ * Generate real questions asynchronously and update cache
+ */
+async function generateRealQuestionsAsync(
+  subject: string,
+  difficulty: 'Easy' | 'Medium' | 'Hard',
+  examLevel: 'Foundation' | 'Intermediate' | 'Final',
+  questionCount: number,
+  paperType: 'Subjective' | 'Objective' | 'Mixed',
+  cacheKey: string
+): Promise<void> {
+  try {
+    const realQuestions: Question[] = [];
+    
+    // Determine the distribution of question types based on paper type
+    let mcqCount = 0;
+    let subjectiveCount = 0;
+    
+    switch (paperType) {
+      case 'Objective':
+        mcqCount = questionCount;
+        break;
+      case 'Subjective':
+        subjectiveCount = questionCount;
+        break;
+      case 'Mixed':
+        // For mixed papers, distribute questions with more weight to MCQs
+        mcqCount = Math.ceil(questionCount * 0.7); // 70% MCQs
+        subjectiveCount = questionCount - mcqCount; // 30% Subjective
+        break;
+    }
+    
+    // Generate MCQ questions in smaller batches with parallel processing
+    if (mcqCount > 0) {
+      const batchSize = 2; // Small batch size
+      
+      for (let i = 0; i < mcqCount; i += batchSize) {
+        // Create a batch of promises
+        const batch = Array.from(
+          { length: Math.min(batchSize, mcqCount - i) }, 
+          (_, j) => generateQuestion(subject, difficulty, examLevel, 'MCQ', i + j)
+        );
+        
+        // Process batch in parallel
+        const batchResults = await Promise.all(batch);
+        realQuestions.push(...batchResults);
+        
+        // Update the cache after each batch
+        questionCache[cacheKey] = {
+          questions: [...realQuestions],
+          timestamp: Date.now()
+        };
+        
+        console.log(`Generated batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(mcqCount/batchSize)} of MCQ questions`);
+        
+        // Add a small delay between batches
+        if (i + batchSize < mcqCount) {
+          await delay(500); // 500ms delay
+        }
+      }
+    }
+    
+    // Generate subjective questions one at a time
+    if (subjectiveCount > 0) {
+      for (let i = 0; i < subjectiveCount; i++) {
+        const question = await generateQuestion(subject, difficulty, examLevel, 'Subjective', mcqCount + i);
+        realQuestions.push(question);
+        
+        // Update the cache after each question
+        questionCache[cacheKey] = {
+          questions: [...realQuestions],
+          timestamp: Date.now()
+        };
+        
+        console.log(`Generated subjective question ${i + 1}/${subjectiveCount}`);
+        
+        // Add a small delay between questions
+        if (i + 1 < subjectiveCount) {
+          await delay(500); // 500ms delay
+        }
+      }
+    }
+    
+    console.log(`Background generation complete: ${realQuestions.length} questions for ${subject}`);
+    
+  } catch (error) {
+    console.error('Error in background question generation:', error);
+  }
 }

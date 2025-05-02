@@ -7,6 +7,9 @@ const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
 // Maximum number of retry attempts
 const MAX_RETRIES = 3;
 
+// Default API timeout in milliseconds (30 seconds)
+const DEFAULT_TIMEOUT = 30000;
+
 // Check if DeepSeek API key is available
 export const isDeepSeekAvailable = !!DEEPSEEK_API_KEY;
 
@@ -247,15 +250,36 @@ General formatting guidelines:
   return systemPrompt + formatInstructions;
 }
 
+// Simple in-memory response cache
+const responseCache: Record<string, { response: string, timestamp: number }> = {};
+const CACHE_TTL = 4 * 60 * 60 * 1000; // 4 hours cache TTL
+
+/**
+ * Generate a cache key for API responses
+ */
+function generateCacheKey(systemPrompt: string, userQuery: string): string {
+  // Create a deterministic but reasonably unique key
+  return `${systemPrompt.slice(0, 50)}-${userQuery}`.replace(/\s+/g, '-');
+}
+
+/**
+ * Check if a cached response is still valid
+ */
+function isCacheValid(cacheEntry: { response: string, timestamp: number }): boolean {
+  return Date.now() - cacheEntry.timestamp < CACHE_TTL;
+}
+
 /**
  * Generate a response using the DeepSeek API
  * @param systemPrompt - The system prompt to guide the AI
  * @param userQuery - The user's query
+ * @param timeout - Optional timeout in milliseconds (defaults to 30 seconds)
  * @returns The AI-generated response
  */
 export async function generateDeepSeekResponse(
   systemPrompt: string,
-  userQuery: string
+  userQuery: string,
+  timeout: number = DEFAULT_TIMEOUT
 ): Promise<string> {
   if (!isDeepSeekAvailable) {
     console.warn('DeepSeek API key is not available. Using fallback response.');
@@ -263,6 +287,15 @@ export async function generateDeepSeekResponse(
   }
 
   try {
+    // Check cache first
+    const cacheKey = generateCacheKey(systemPrompt, userQuery);
+    const cachedResponse = responseCache[cacheKey];
+    
+    if (cachedResponse && isCacheValid(cachedResponse)) {
+      console.log('Using cached DeepSeek response');
+      return cachedResponse.response;
+    }
+    
     // Detect if user is requesting a specific format
     const requestedFormat = detectRequestedFormat(userQuery);
     
@@ -280,39 +313,58 @@ export async function generateDeepSeekResponse(
       },
     ];
 
+    // Optimize token usage - use smaller max_tokens for faster responses
     const requestBody: DeepSeekRequest = {
       model: 'deepseek-chat',
       messages,
       temperature: 0.7,
-      max_tokens: 1000,
+      max_tokens: 600, // Reduced from 1000 for faster responses
     };
 
     // Use retry with exponential backoff for API calls
     const makeApiCall = async () => {
-      const response = await fetch(DEEPSEEK_API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
-        },
-        body: JSON.stringify(requestBody),
-        signal: AbortSignal.timeout(60000) // 60 second timeout
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`API returned status ${response.status}: ${errorText}`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+      
+      try {
+        const response = await fetch(DEEPSEEK_API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+          },
+          body: JSON.stringify(requestBody),
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`API returned status ${response.status}: ${errorText}`);
+        }
+        
+        return await response.json();
+      } catch (error) {
+        clearTimeout(timeoutId);
+        throw error;
       }
-
-      return response.json();
     };
 
     // Call the API with retry logic
     const data = await retryWithExponentialBackoff<DeepSeekResponse>(makeApiCall);
 
-    // Extract and return the response text
+    // Extract and store the response text
     if (data.choices && data.choices.length > 0) {
-      return data.choices[0].message.content;
+      const responseText = data.choices[0].message.content;
+      
+      // Cache the response
+      responseCache[cacheKey] = {
+        response: responseText,
+        timestamp: Date.now()
+      };
+      
+      return responseText;
     } else {
       console.warn('DeepSeek API returned empty response:', data);
       return "I apologize, but I couldn't generate a proper response. Please try rephrasing your question.";
