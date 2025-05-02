@@ -6,14 +6,12 @@ import '../../../_init';
 // Import the database functions
 import { getMockTest, getTestSubmission } from '@/db/mock-tests-db';
 
-// Import the safeDbOperation function from the main route file
-import { safeDbOperation } from '../../db-route';
-
 // Using only database functions, no mock data
 
 // GET endpoint to retrieve a specific test result
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-  const { userId } = auth();
+  const authResult = await auth();
+  const userId = authResult.userId;
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }

@@ -168,7 +168,7 @@ export default function TestHistoryPage() {
         </div>
       ) : (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center">
-          <p className="text-gray-500 dark:text-gray-400 mb-4">You haven't taken any mock tests yet.</p>
+          <p className="text-gray-500 dark:text-gray-400 mb-4">You haven&apos;t taken any mock tests yet.</p>
           <Link 
             href="/dashboard/mock-tests"
             className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 transition-colors"

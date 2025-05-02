@@ -57,7 +57,7 @@ export function createEmptyUserProgress(userId: string): UserProgress {
 }
 
 // GET endpoint to retrieve user progress
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const authResult = await auth();
     const userId = authResult?.userId;

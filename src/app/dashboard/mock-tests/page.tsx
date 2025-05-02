@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 
 type MockTest = {
@@ -80,54 +80,8 @@ export default function MockTestsPage() {
     fetchTests();
   }, []);
 
-  // Timer for active test
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    
-    if (activeTest && timeLeft > 0) {
-      timer = setInterval(() => {
-        setTimeLeft(prev => prev - 1);
-      }, 1000);
-    } else if (timeLeft === 0 && activeTest) {
-      // Auto-submit when time runs out
-      handleSubmitTest();
-    }
-
-    return () => clearInterval(timer);
-  }, [activeTest, timeLeft]);
-
-  // Start a test
-  const handleStartTest = async (templateId: string) => {
-    try {
-      setLoading(true);
-      // Request a new test to be generated from the template
-      const response = await fetch(`/api/mock-tests?templateId=${templateId}`);
-      if (!response.ok) {
-        throw new Error('Failed to generate test');
-      }
-      const test = await response.json();
-      setActiveTest(test);
-      setTimeLeft(test.duration * 60); // Convert minutes to seconds
-      setAnswers({});
-      setStartTime(new Date());
-    } catch (err) {
-      setError('Error loading test. Please try again.');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Handle answer selection
-  const handleAnswerSelect = (questionId: string, optionIndex: number) => {
-    setAnswers(prev => ({
-      ...prev,
-      [questionId]: optionIndex
-    }));
-  };
-
-  // Submit test
-  const handleSubmitTest = async () => {
+  // Submit test - use useCallback to prevent reference changes between renders
+  const handleSubmitTest = useCallback(async () => {
     if (!activeTest) return;
     
     try {
@@ -188,6 +142,52 @@ export default function MockTestsPage() {
     } finally {
       setLoading(false);
     }
+  }, [activeTest, startTime, answers, setLoading, setTestResult, setActiveTest, setCurrentPage, setError]);
+
+  // Timer for active test
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    
+    if (activeTest && timeLeft > 0) {
+      timer = setInterval(() => {
+        setTimeLeft(prev => prev - 1);
+      }, 1000);
+    } else if (timeLeft === 0 && activeTest) {
+      // Auto-submit when time runs out
+      handleSubmitTest();
+    }
+
+    return () => clearInterval(timer);
+  }, [activeTest, timeLeft, handleSubmitTest]);
+
+  // Start a test
+  const handleStartTest = async (templateId: string) => {
+    try {
+      setLoading(true);
+      // Request a new test to be generated from the template
+      const response = await fetch(`/api/mock-tests?templateId=${templateId}`);
+      if (!response.ok) {
+        throw new Error('Failed to generate test');
+      }
+      const test = await response.json();
+      setActiveTest(test);
+      setTimeLeft(test.duration * 60); // Convert minutes to seconds
+      setAnswers({});
+      setStartTime(new Date());
+    } catch (err) {
+      setError('Error loading test. Please try again.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle answer selection
+  const handleAnswerSelect = (questionId: string, optionIndex: number) => {
+    setAnswers(prev => ({
+      ...prev,
+      [questionId]: optionIndex
+    }));
   };
 
   // Format time (seconds) to MM:SS

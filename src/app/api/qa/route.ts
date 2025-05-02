@@ -44,6 +44,13 @@ export async function POST(req: NextRequest) {
     // Log the query to the database for future analysis (only if database is available)
     if (isDatabaseAvailable) {
       try {
+        // First, ensure user exists in the database
+        await query(
+          'INSERT INTO users (id) VALUES ($1) ON CONFLICT (id) DO NOTHING',
+          [userId]
+        );
+        
+        // Then insert the query
         await query(
           'INSERT INTO user_queries (user_id, subject, query, response) VALUES ($1, $2, $3, $4)',
           [userId, subject, userQuery, aiResponse]

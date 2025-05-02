@@ -3,9 +3,15 @@ import { redirect } from 'next/navigation';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 
+// Define a type for the session claims
+interface SessionClaims {
+  metadata?: {
+    role?: string;
+  };
+}
+
 // Function to check if the user has the admin role based on Clerk session claims
-// Assumes the admin role is stored in publicMetadata: { role: 'admin' }
-const checkAdminRole = (sessionClaims: any) => {
+const checkAdminRole = (sessionClaims: SessionClaims | null) => {
   return sessionClaims?.metadata?.role === 'admin';
 };
 

@@ -80,7 +80,7 @@ async function verifyNeonConnection() {
     
     try {
       await pool.end();
-    } catch (endError) {
+    } catch {
       // Ignore errors when ending the pool
     }
     

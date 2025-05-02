@@ -60,6 +60,10 @@ type TestSubmission = {
   subject?: string; // Subject of the test
 };
 
+// In-memory storage for mock tests and submissions when database is unavailable
+export const mockTests: Record<string, MockTest> = {};
+export const testSubmissions: TestSubmission[] = [];
+
 // Question banks for dynamic test generation
 const mcqQuestionBanks: Record<string, Question[]> = {
   'Taxation': [
@@ -623,13 +627,6 @@ function generateStaticTest(templateId: string): MockTest | null {
     questions: selectedQuestions
   };
 }
-
-// In-memory storage for dynamically generated tests
-export const mockTests: Record<string, MockTest> = {};
-
-// Mock database for user submissions
-// Exported to be used by the history endpoint
-export let testSubmissions: TestSubmission[] = [];
 
 // GET endpoint to retrieve available tests or a specific test
 export async function GET(req: NextRequest) {

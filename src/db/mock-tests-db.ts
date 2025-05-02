@@ -130,7 +130,7 @@ export async function saveTestSubmission(submission: TestSubmission): Promise<bo
     await query('BEGIN');
     
     // Insert test submission
-    const result = await query(
+    await query(
       'INSERT INTO test_submissions (test_id, user_id, answers, score, completed_at, time_spent, test_title, subject) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id',
       [
         submission.testId,
@@ -144,7 +144,7 @@ export async function saveTestSubmission(submission: TestSubmission): Promise<bo
       ]
     );
     
-    const submissionId = result.rows[0].id;
+    // const submissionId = result.rows[0].id; // Commented out since it's unused
     
     // Also save to test_history table
     try {
@@ -223,7 +223,7 @@ export async function saveTestSubmission(submission: TestSubmission): Promise<bo
     const questionCount = Object.keys(submission.answers).length;
     
     if (userProgressResult.rows.length > 0) {
-      const currentProgress = userProgressResult.rows[0];
+      // const currentProgress = userProgressResult.rows[0]; // Commented out since it's unused
       
       // Update user progress
       await query(
@@ -314,7 +314,7 @@ export async function getTestSubmission(testId: string, userId: string, complete
 /**
  * Get all test submissions for a user
  */
-export async function getUserTestHistory(userId: string): Promise<any[]> {
+export async function getUserTestHistory(userId: string): Promise<TestHistoryItem[]> {
   try {
     const result = await query(
       `SELECT 
@@ -347,10 +347,44 @@ export async function getUserTestHistory(userId: string): Promise<any[]> {
   }
 }
 
+// Define interfaces for better type safety
+export interface TestHistoryItem {
+  id: number | string;
+  testId: string;
+  title: string;
+  subject: string;
+  score: number;
+  completedAt: string;
+  timeSpent: number;
+}
+
+export interface SubjectPerformance {
+  subject: string;
+  score: number;
+  questionsAnswered: number;
+  testsCompleted: number;
+  lastActivity: string;
+}
+
+export interface ProgressTrendItem {
+  date: string;
+  score: number;
+  questionsAnswered: number;
+}
+
+export interface TestResult {
+  questionId: string;
+  isCorrect: boolean;
+  userAnswer: string | number;
+  correctAnswer?: string | number;
+  marksObtained?: number;
+  questionText?: string;
+}
+
 /**
  * Get user's recent test submissions (last 5)
  */
-export async function getRecentTestSubmissions(userId: string): Promise<any[]> {
+export async function getRecentTestSubmissions(userId: string): Promise<TestHistoryItem[]> {
   try {
     const result = await query(
       `SELECT 
@@ -387,7 +421,7 @@ export async function getRecentTestSubmissions(userId: string): Promise<any[]> {
 /**
  * Get user performance statistics by subject
  */
-export async function getUserPerformanceBySubject(userId: string): Promise<any[]> {
+export async function getUserPerformanceBySubject(userId: string): Promise<SubjectPerformance[]> {
   try {
     const result = await query(
       `SELECT 
@@ -404,9 +438,10 @@ export async function getUserPerformanceBySubject(userId: string): Promise<any[]
 
     return result.rows.map(row => ({
       subject: row.subject || 'General',
-      averageScore: parseFloat(row.average_score),
+      score: parseFloat(row.average_score),
+      questionsAnswered: parseInt(row.tests_completed),
       testsCompleted: parseInt(row.tests_completed),
-      totalTimeSpent: parseInt(row.total_time_spent)
+      lastActivity: row.total_time_spent.toISOString()
     }));
   } catch (error) {
     console.error('Error retrieving user performance by subject from database:', error);
@@ -417,7 +452,7 @@ export async function getUserPerformanceBySubject(userId: string): Promise<any[]
 /**
  * Save detailed test results
  */
-export async function saveTestResults(submissionId: number, results: any[]): Promise<boolean> {
+export async function saveTestResults(submissionId: number, results: TestResult[]): Promise<boolean> {
   try {
     // Begin transaction
     await query('BEGIN');
@@ -452,7 +487,7 @@ export async function saveTestResults(submissionId: number, results: any[]): Pro
 /**
  * Get detailed test results for a submission
  */
-export async function getTestResults(submissionId: number): Promise<any[]> {
+export async function getTestResults(submissionId: number): Promise<TestResult[]> {
   try {
     const result = await query(
       'SELECT * FROM test_results WHERE submission_id = $1',
@@ -475,7 +510,7 @@ export async function getTestResults(submissionId: number): Promise<any[]> {
 /**
  * Get user's progress over time (weekly trend)
  */
-export async function getUserProgressTrend(userId: string): Promise<any[]> {
+export async function getUserProgressTrend(userId: string): Promise<ProgressTrendItem[]> {
   try {
     const result = await query(
       `SELECT 

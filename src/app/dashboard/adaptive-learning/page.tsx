@@ -49,8 +49,17 @@ type RecommendedTopic = {
   relevance: string;
 };
 
+// Define an interface for resource items
+interface ResourceItem {
+  id: string;
+  title: string;
+  type: string;
+  url?: string;
+  description?: string;
+}
+
 // Resource mapping for common topics
-const resourceMapping: Record<string, any[]> = {
+const resourceMapping: Record<string, ResourceItem[]> = {
   'Capital Gains': [
     { id: 'res-1', title: 'Capital Gains Fundamentals', type: 'Article' },
     { id: 'res-2', title: 'Calculating Capital Gains Tax', type: 'Video' },
@@ -206,7 +215,7 @@ export default function AdaptiveLearningPage() {
       // Generate a topic based on the subject
       let topic = '';
       let difficulty = 'Medium';
-      let relevance = 'High';
+      const relevance = 'High';
       
       // Determine difficulty based on user's overall performance
       if (progress.averageScore > 70) {
@@ -294,7 +303,7 @@ export default function AdaptiveLearningPage() {
       {!isLoading && !error && activeTab === 'weak-areas' && (
         <div className="space-y-6">
           <p className="text-gray-600 dark:text-gray-300 mb-4">
-            Based on your test performance, we've identified these areas where you could improve:
+            Based on your test performance, we&apos;ve identified these areas where you could improve:
           </p>
           
           {weakAreas.length === 0 ? (
@@ -351,7 +360,7 @@ export default function AdaptiveLearningPage() {
                     href={`/dashboard/qa?subject=${area.subject.toLowerCase()}&topic=${area.topic.toLowerCase()}`}
                     className="text-sm text-blue-600 hover:underline dark:text-blue-400"
                   >
-                    Practice this topic with AI Q&A →
+                    Practice this topic with AI Q&amp;A →
                   </Link>
                 </div>
               </div>

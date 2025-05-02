@@ -1,10 +1,11 @@
-import { NextResponse } from 'next/server';
-
 // DeepSeek API client for CA Guru AI
 // This utility handles communication with the DeepSeek API
 
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
+
+// Maximum number of retry attempts
+const MAX_RETRIES = 3;
 
 // Check if DeepSeek API key is available
 export const isDeepSeekAvailable = !!DEEPSEEK_API_KEY;
@@ -38,6 +39,50 @@ interface DeepSeekResponse {
     completion_tokens: number;
     total_tokens: number;
   };
+}
+
+/**
+ * Helper function to delay execution for a specified time
+ * @param ms - Time to delay in milliseconds
+ */
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Retry a function with exponential backoff
+ * @param fn - Function to retry
+ * @param retries - Number of retries remaining
+ * @param baseDelay - Base delay for exponential backoff in milliseconds
+ * @param errors - Array to collect errors from each attempt
+ */
+async function retryWithExponentialBackoff<T>(
+  fn: () => Promise<T>,
+  retries = MAX_RETRIES,
+  baseDelay = 1000,
+  errors: Error[] = []
+): Promise<T> {
+  try {
+    return await fn();
+  } catch (err) {
+    const error = err instanceof Error ? err : new Error(String(err));
+    
+    if (retries <= 0) {
+      console.error(`All ${MAX_RETRIES} retry attempts failed:`, errors);
+      throw new Error(`Failed after ${MAX_RETRIES} attempts. Last error: ${error.message}`);
+    }
+    
+    // Add the current error to the errors array
+    errors.push(error);
+    
+    // Calculate delay with exponential backoff and jitter
+    const waitTime = baseDelay * Math.pow(2, MAX_RETRIES - retries) * (0.5 + Math.random());
+    console.log(`API call failed. Retrying in ${Math.round(waitTime)}ms... (${retries} attempts left)`);
+    
+    // Wait before retrying
+    await delay(waitTime);
+    
+    // Retry with one fewer retry remaining
+    return retryWithExponentialBackoff(fn, retries - 1, baseDelay, errors);
+  }
 }
 
 /**
@@ -242,26 +287,39 @@ export async function generateDeepSeekResponse(
       max_tokens: 1000,
     };
 
-    const response = await fetch(DEEPSEEK_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
-      },
-      body: JSON.stringify(requestBody),
-    });
+    // Use retry with exponential backoff for API calls
+    const makeApiCall = async () => {
+      const response = await fetch(DEEPSEEK_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+        },
+        body: JSON.stringify(requestBody),
+        signal: AbortSignal.timeout(60000) // 60 second timeout
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('DeepSeek API error:', errorData);
-      throw new Error(`DeepSeek API error: ${response.status}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`API returned status ${response.status}: ${errorText}`);
+      }
+
+      return response.json();
+    };
+
+    // Call the API with retry logic
+    const data = await retryWithExponentialBackoff<DeepSeekResponse>(makeApiCall);
+
+    // Extract and return the response text
+    if (data.choices && data.choices.length > 0) {
+      return data.choices[0].message.content;
+    } else {
+      console.warn('DeepSeek API returned empty response:', data);
+      return "I apologize, but I couldn't generate a proper response. Please try rephrasing your question.";
     }
-
-    const data = await response.json() as DeepSeekResponse;
-    return data.choices[0].message.content;
   } catch (error) {
     console.error('Error calling DeepSeek API:', error);
-    return "I'm sorry, but I encountered an error while processing your request. Please try again later or contact support if this issue persists.";
+    return "I'm sorry, but I encountered an error while processing your request. Please try again later.";
   }
 }
 

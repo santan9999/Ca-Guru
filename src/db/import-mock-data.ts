@@ -6,11 +6,24 @@
  * created using the DeepSeek API instead of using predefined mock data.
  */
 
-import { query } from '@/lib/db';
-import { testTemplates, testSubmissions } from '@/app/api/mock-tests/route';
+import { testTemplates } from '@/app/api/mock-tests/route';
 import { saveMockTest, saveTestSubmission } from './mock-tests-db';
 import { generateQuestionsForTest } from '@/lib/question-generator';
 import { Question } from '@/lib/question-generator';
+
+// Test submission sample data - replacing the import since it's not exported from route.ts
+const testSubmissions = [
+  {
+    testId: 'template-1',
+    userId: 'user_sample1',
+    answers: { 'tax-q1': 0, 'tax-q2': 1, 'tax-q3': 2 },
+    score: 85,
+    completedAt: new Date().toISOString(),
+    timeSpent: 1500,
+    testTitle: 'Income Tax Fundamentals',
+    subject: 'Taxation'
+  }
+];
 
 // Define MockTest type to match the one in mock-tests-db.ts
 type MockTest = {

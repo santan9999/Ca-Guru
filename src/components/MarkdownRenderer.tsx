@@ -18,7 +18,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, format = '
     if (!content) return '';
     
     // Remove the example section, prompt text, and notes
-    let filtered = content
+    const filtered = content
       // Remove the entire example section with Direct Tax and Indirect Tax
       .replace(/Example:[\s\S]*?(?:Direct Tax|Indirect Tax)[\s\S]*?(?=\n\n|$)/g, '')
       // Remove any "Would you like" questions

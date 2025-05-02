@@ -3,6 +3,41 @@
 import { useState, useEffect, useRef } from 'react';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 
+// Extend Window interface with speech recognition types
+declare global {
+  interface Window {
+    SpeechRecognition?: typeof SpeechRecognition;
+    webkitSpeechRecognition?: typeof SpeechRecognition;
+  }
+}
+
+interface SpeechRecognitionEvent {
+  resultIndex: number;
+  results: {
+    [index: number]: {
+      [index: number]: {
+        transcript: string;
+      };
+      isFinal: boolean;
+    };
+  };
+}
+
+interface SpeechRecognitionErrorEvent {
+  error: string;
+}
+
+interface SpeechRecognition {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: (event: SpeechRecognitionEvent) => void;
+  onerror: (event: SpeechRecognitionErrorEvent) => void;
+  onend: () => void;
+  start: () => void;
+  stop: () => void;
+}
+
 export default function VoiceQueryPage() {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
@@ -11,44 +46,46 @@ export default function VoiceQueryPage() {
   const [error, setError] = useState('');
   const [detectedSubject, setDetectedSubject] = useState('');
   const [responseFormat, setResponseFormat] = useState('default');
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   useEffect(() => {
     // Initialize speech recognition if available in the browser
     if (typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = true;
-      recognitionRef.current.interimResults = true;
-      recognitionRef.current.lang = 'en-IN'; // Set to Indian English
+      const SpeechRecognitionConstructor = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognitionConstructor) {
+        recognitionRef.current = new SpeechRecognitionConstructor() as SpeechRecognition;
+        recognitionRef.current.continuous = true;
+        recognitionRef.current.interimResults = true;
+        recognitionRef.current.lang = 'en-IN'; // Set to Indian English
 
-      recognitionRef.current.onresult = (event: any) => {
-        let interimTranscript = '';
-        let finalTranscript = '';
+        recognitionRef.current.onresult = (event: SpeechRecognitionEvent) => {
+          let interimTranscript = '';
+          let finalTranscript = '';
 
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            finalTranscript += transcript + ' ';
-          } else {
-            interimTranscript += transcript;
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+              finalTranscript += transcript + ' ';
+            } else {
+              interimTranscript += transcript;
+            }
           }
-        }
 
-        setTranscript(finalTranscript || interimTranscript);
-      };
+          setTranscript(finalTranscript || interimTranscript);
+        };
 
-      recognitionRef.current.onerror = (event: any) => {
-        console.error('Speech recognition error', event.error);
-        setError(`Error: ${event.error}. Please try again.`);
-        setIsListening(false);
-      };
+        recognitionRef.current.onerror = (event: SpeechRecognitionErrorEvent) => {
+          console.error('Speech recognition error', event.error);
+          setError(`Error: ${event.error}. Please try again.`);
+          setIsListening(false);
+        };
 
-      recognitionRef.current.onend = () => {
-        if (isListening) {
-          recognitionRef.current.start();
-        }
-      };
+        recognitionRef.current.onend = () => {
+          if (isListening) {
+            recognitionRef.current?.start();
+          }
+        };
+      }
     }
 
     return () => {
@@ -129,11 +166,6 @@ export default function VoiceQueryPage() {
     } finally {
       setIsProcessing(false);
     }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await processTranscript();
   };
 
   return (
@@ -224,9 +256,9 @@ export default function VoiceQueryPage() {
         <h2 className="text-xl font-semibold mb-4">Voice Query Tips</h2>
         <ul className="space-y-2 text-gray-600 dark:text-gray-300">
           <li>• Speak clearly and at a moderate pace for best results</li>
-          <li>• Mention the subject area in your question (e.g., "In taxation, what is...")</li>
+          <li>• Mention the subject area in your question (e.g., &quot;In taxation, what is...&quot;)</li>
           <li>• Ask one question at a time for more accurate answers</li>
-          <li>• If the transcript isn't accurate, click the microphone button to try again</li>
+          <li>• If the transcript isn&apos;t accurate, click the microphone button to try again</li>
         </ul>
       </div>
     </div>

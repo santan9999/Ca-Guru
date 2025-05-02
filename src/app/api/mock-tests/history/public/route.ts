@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import '../../../_init';
 
 // Import the database functions
-import { getAllTestHistory, getUserTestHistory } from '@/db/test-history-db';
+// import { getAllTestHistory } from '@/db/mock-tests-db';
+import { getUserTestHistory } from '@/db/test-history-db';
 import { ensureUserExists } from '@/db/user-db';
 
 // Import the safeDbOperation function from the main route file

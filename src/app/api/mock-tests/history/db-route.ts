@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 // Import the initialization module to ensure database is connected
 import '../../_init';
@@ -9,8 +9,9 @@ import { getUserTestHistory } from '@/db/mock-tests-db';
 // Using only database functions, no mock data
 
 // GET endpoint to retrieve user's test history
-export async function GET(req: NextRequest) {
-  const { userId } = auth();
+export async function GET() {
+  const authResult = await auth();
+  const userId = authResult.userId;
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }

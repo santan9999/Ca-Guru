@@ -9,8 +9,23 @@ import { getUserProgress, updateUserProgress, updateUserActivity } from '@/db/us
 // Import the createEmptyUserProgress function
 import { createEmptyUserProgress } from './route';
 
+// Define more specific types
+interface SubjectProgress {
+  subject: string;
+  score: number;
+  questionsAnswered: number;
+  testsCompleted: number;
+  lastActivity: string;
+}
+
+interface DailyActivity {
+  date: string;
+  score: number;
+  questionsAnswered: number;
+}
+
 // GET endpoint to retrieve user progress
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const authResult = await auth();
     const userId = authResult?.userId;
@@ -101,7 +116,7 @@ export async function POST(req: NextRequest) {
         }
         
         // Find subject progress
-        const subjectProgress = progress.subjectProgress.find((s: any) => s.subject === subject);
+        const subjectProgress = progress.subjectProgress.find((s: SubjectProgress) => s.subject === subject);
         if (subjectProgress) {
           // Update subject progress
           subjectProgress.questionsAnswered += 1;
@@ -118,15 +133,15 @@ export async function POST(req: NextRequest) {
         progress.totalQuestionsAnswered += 1;
         
         // Update average score across all subjects
-        const totalAnswered = progress.subjectProgress.reduce((sum: number, a: any) => sum + a.questionsAnswered, 0);
+        const totalAnswered = progress.subjectProgress.reduce((sum: number, a: SubjectProgress) => sum + a.questionsAnswered, 0);
         const weightedScoreSum = progress.subjectProgress.reduce(
-          (sum: number, a: any) => sum + (a.score * a.questionsAnswered), 0
+          (sum: number, a: SubjectProgress) => sum + (a.score * a.questionsAnswered), 0
         );
         progress.averageScore = totalAnswered > 0 ? Math.round(weightedScoreSum / totalAnswered) : 0;
         
         // Update today's activity
         const today = new Date().toISOString().split('T')[0];
-        let todayActivity = progress.weeklyActivity.find((a: any) => a.date === today);
+        let todayActivity = progress.weeklyActivity.find((a: DailyActivity) => a.date === today);
         if (!todayActivity) {
           todayActivity = {
             date: today,
@@ -158,7 +173,7 @@ export async function POST(req: NextRequest) {
         }
         
         // Find subject progress
-        const subjectProgress = progress.subjectProgress.find((s: any) => s.subject === subject);
+        const subjectProgress = progress.subjectProgress.find((s: SubjectProgress) => s.subject === subject);
         if (subjectProgress) {
           // Update subject progress
           subjectProgress.testsCompleted += 1;
@@ -177,15 +192,15 @@ export async function POST(req: NextRequest) {
         progress.totalQuestionsAnswered += questionsAnswered;
         
         // Update average score across all subjects
-        const totalAnswered = progress.subjectProgress.reduce((sum: number, a: any) => sum + a.questionsAnswered, 0);
+        const totalAnswered = progress.subjectProgress.reduce((sum: number, a: SubjectProgress) => sum + a.questionsAnswered, 0);
         const weightedScoreSum = progress.subjectProgress.reduce(
-          (sum: number, a: any) => sum + (a.score * a.questionsAnswered), 0
+          (sum: number, a: SubjectProgress) => sum + (a.score * a.questionsAnswered), 0
         );
         progress.averageScore = totalAnswered > 0 ? Math.round(weightedScoreSum / totalAnswered) : 0;
         
         // Update today's activity
         const today = new Date().toISOString().split('T')[0];
-        let todayActivity = progress.weeklyActivity.find((a: any) => a.date === today);
+        let todayActivity = progress.weeklyActivity.find((a: DailyActivity) => a.date === today);
         if (!todayActivity) {
           todayActivity = {
             date: today,

@@ -6,6 +6,20 @@
  */
 
 /**
+ * Test template interface to replace 'any' type
+ */
+interface TestTemplate {
+  id: string;
+  title: string;
+  subject: string;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+  duration: number;
+  questionCount: number;
+  examLevel?: 'Foundation' | 'Intermediate' | 'Final';
+  paperType?: 'Subjective' | 'Objective' | 'Mixed';
+}
+
+/**
  * Fetch AI-generated questions for a mock test
  * @param subject - The subject of the test
  * @param difficulty - The difficulty level
@@ -54,7 +68,7 @@ export async function fetchAIGeneratedQuestions(
  * @param testTemplate - The test template to use
  * @returns A complete mock test with AI-generated questions
  */
-export async function createMockTestWithAIQuestions(testTemplate: any) {
+export async function createMockTestWithAIQuestions(testTemplate: TestTemplate) {
   try {
     // Generate questions based on template specifications
     const questions = await fetchAIGeneratedQuestions(

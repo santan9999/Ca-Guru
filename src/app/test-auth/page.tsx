@@ -5,10 +5,19 @@ import { useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
+// Define the debug info type
+interface DebugInfo {
+  isLoaded: boolean;
+  userId: string | null;
+  sessionId: string | null;
+  hasSession: boolean;
+  isSignedIn: boolean;
+}
+
 export default function TestAuthPage() {
   const { isLoaded, userId, sessionId } = useAuth();
   const router = useRouter();
-  const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [debugInfo, setDebugInfo] = useState<DebugInfo | null>(null);
 
   useEffect(() => {
     if (isLoaded) {
@@ -60,7 +69,7 @@ export default function TestAuthPage() {
                   onClick={() => router.push('/dashboard')} 
                   className="px-4 py-2 bg-blue-600 text-white rounded block w-full"
                 >
-                  Option 1: router.push('/dashboard')
+                  Option 1: router.push(&apos;/dashboard&apos;)
                 </button>
                 
                 <Link 

@@ -6,13 +6,16 @@ import '../../../_init';
 // Import the database functions
 import { getMockTest, getTestSubmission } from '@/db/mock-tests-db';
 
-// Import the test submissions, mock tests data, and safeDbOperation function
-import { testSubmissions, mockTests, safeDbOperation } from '../../route';
+// Import the safeDbOperation function
+import { safeDbOperation } from '../../route';
 
 // GET endpoint to retrieve a specific test result
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-  const authResult = auth();
-  const userId = authResult?.userId;
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const authResult = await auth();
+  const userId = authResult.userId;
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -33,23 +36,20 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const testId = parts[0];
     const timestamp = parts.slice(1).join('-'); // Rejoin in case timestamp contains hyphens
 
-    // Try to get the submission from database first, fall back to in-memory if needed
+    // Try to get the submission from database
     const submission = await safeDbOperation(
       async () => await getTestSubmission(testId, userId, timestamp),
-      // Fallback to in-memory storage
-      testSubmissions.find(
-        sub => sub.userId === userId && sub.testId === testId && sub.completedAt === timestamp
-      )
+      null
     );
 
     if (!submission) {
       return NextResponse.json({ error: 'Test result not found' }, { status: 404 });
     }
 
-    // Try to get the test from database first, fall back to in-memory if needed
+    // Try to get the test from database
     const test = await safeDbOperation(
       async () => await getMockTest(testId),
-      mockTests[testId]
+      null
     );
     
     if (!test) {

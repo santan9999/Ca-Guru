@@ -10,9 +10,12 @@ import { ensureUserExists } from '@/db/user-db';
 import { safeDbOperation } from '../../route';
 
 // GET endpoint to retrieve detailed test history for a specific entry
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   // Extract userId from query parameter instead of auth
-  const userId = req.nextUrl.searchParams.get('userId');
+  const userId = request.nextUrl.searchParams.get('userId');
   
   if (!userId) {
     console.warn('Missing userId parameter for test history detail');

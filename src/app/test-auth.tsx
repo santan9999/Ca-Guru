@@ -4,10 +4,19 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 
+// Define the debug info type
+interface DebugInfo {
+  isLoaded: boolean;
+  userId: string | null;
+  sessionId: string | null;
+  hasSession: boolean;
+  isSignedIn: boolean;
+}
+
 export default function TestAuth() {
   const { isLoaded, userId, sessionId } = useAuth();
   const router = useRouter();
-  const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [debugInfo, setDebugInfo] = useState<DebugInfo | null>(null);
 
   useEffect(() => {
     if (isLoaded) {

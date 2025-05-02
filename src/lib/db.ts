@@ -32,7 +32,7 @@ pool.on('error', (err) => {
 });
 
 // Helper function to execute SQL queries with improved error handling
-export async function query(text: string, params?: any[]) {
+export async function query(text: string, params?: unknown[]) {
   let client;
   try {
     client = await pool.connect();

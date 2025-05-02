@@ -8,8 +8,9 @@ import {
   saveMockTest,
   getMockTest,
   saveTestSubmission,
-  getTestSubmission,
-  getUserTestHistory
+  // Removing unused imports
+  // getTestSubmission,
+  // getUserTestHistory
 } from '@/db/mock-tests-db';
 
 // Import the mock test data from the original route for fallback
@@ -150,7 +151,8 @@ export async function GET(req: NextRequest) {
 
 // POST endpoint to submit a completed test
 export async function POST(req: NextRequest) {
-  const { userId } = auth();
+  const authResult = await auth();
+  const userId = authResult.userId;
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -174,7 +176,7 @@ export async function POST(req: NextRequest) {
 
     // Calculate score
     let correctCount = 0;
-    let totalQuestions = test.questions.length;
+    const totalQuestions = test.questions.length;
 
     for (const question of test.questions) {
       if (question.type === 'MCQ' && answers[question.id] === question.correctAnswer) {

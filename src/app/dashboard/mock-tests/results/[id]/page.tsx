@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 
 type TestResult = {
   id: string;
@@ -28,7 +28,6 @@ export default function TestResultPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const params = useParams();
-  const router = useRouter();
   const resultId = params.id as string;
 
   useEffect(() => {

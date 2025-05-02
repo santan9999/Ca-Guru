@@ -6,8 +6,12 @@
  */
 
 // Import the required modules
-const { execSync } = require('child_process');
-const path = require('path');
+import { execSync } from 'child_process';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 console.log('Running database connection test...');
 console.log('This will help diagnose issues with your Neon Tech database connection.');
@@ -20,7 +24,7 @@ try {
     stdio: 'inherit',
     cwd: path.resolve(__dirname, '../..')
   });
-} catch (error) {
+} catch {
   console.error('\nFailed to run the test script. Make sure you have ts-node installed.');
   console.log('You can install it with: npm install -g ts-node tsconfig-paths');
   console.log('\nAlternatively, you can run the test directly with:');

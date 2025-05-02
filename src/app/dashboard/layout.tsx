@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth, useSession } from '@clerk/nextjs';
+import { useAuth } from '@clerk/nextjs';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/dashboard/Sidebar';
@@ -12,7 +12,6 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { userId, isLoaded } = useAuth();
-  const { session } = useSession();
   const router = useRouter();
   
   useEffect(() => {

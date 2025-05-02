@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useUser } from '@clerk/nextjs';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 
 const subjects = [
@@ -14,7 +13,6 @@ const subjects = [
 ];
 
 export default function QAPage() {
-  const { user } = useUser();
   const [selectedSubject, setSelectedSubject] = useState('taxation');
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
