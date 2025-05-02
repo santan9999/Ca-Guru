@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 // Import the initialization module to ensure database is connected
 import '../_init';
+import { generateQuestionsForTest } from '@/lib/question-generator';
 
 // Flag to track if database is available
 // Initially assume database is available if URL is configured
@@ -490,9 +491,6 @@ function shuffleArray<T>(array: T[]): T[] {
   }
   return shuffled;
 }
-
-// Import the AI question generator
-import { generateQuestionsForTest } from '@/lib/question-generator';
 
 // Function to generate a test with AI-generated questions based on CA exam pattern
 async function generateTest(templateId: string): Promise<MockTest | null> {

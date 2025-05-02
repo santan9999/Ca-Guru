@@ -203,6 +203,7 @@ function generateFallbackQuestion(
 
 /**
  * Generate more fallback questions for immediate display
+ * Now adds variety to prevent duplicates
  */
 export function generateMultipleFallbackQuestions(
   subject: string,
@@ -230,21 +231,218 @@ export function generateMultipleFallbackQuestions(
       break;
   }
   
-  // Generate MCQ fallback questions
+  // Generate MCQ fallback questions with variety
+  const mcqQuestions = getVariedMCQs(subject, mcqCount);
+  
   for (let i = 0; i < mcqCount; i++) {
-    questions.push(generateFallbackQuestion(
-      subject, difficulty, examLevel, 'MCQ', i, 'Immediate fallback'
-    ));
+    const questionData = mcqQuestions[i] || getDefaultMCQ(subject, i);
+    
+    questions.push({
+      id: `${subject.toLowerCase()}-fallback-mcq-${i}`,
+      text: questionData.text,
+      type: 'MCQ',
+      options: questionData.options,
+      correctAnswer: questionData.correctAnswer,
+      isCompulsory: i < 3,
+      marks: 1
+    });
   }
   
-  // Generate subjective fallback questions
+  // Generate subjective fallback questions with variety
+  const subjQuestions = getVariedSubjectives(subject, subjectiveCount);
+  
   for (let i = 0; i < subjectiveCount; i++) {
-    questions.push(generateFallbackQuestion(
-      subject, difficulty, examLevel, 'Subjective', mcqCount + i, 'Immediate fallback'
-    ));
+    const questionText = subjQuestions[i] || `Explain the key principles and concepts related to ${subject} with reference to recent developments.`;
+    
+    questions.push({
+      id: `${subject.toLowerCase()}-fallback-subjective-${i}`,
+      text: questionText,
+      type: 'Subjective',
+      isCompulsory: false,
+      marks: 16
+    });
   }
   
   return questions;
+}
+
+/**
+ * Provide varied MCQ questions based on subject
+ */
+function getVariedMCQs(subject: string, count: number): Array<{text: string, options: string[], correctAnswer: number}> {
+  const subjectQuestions: Record<string, Array<{text: string, options: string[], correctAnswer: number}>> = {
+    'Accounting Standards': [
+      {
+        text: 'Which Ind AS deals with Revenue Recognition?',
+        options: ['Ind AS 101', 'Ind AS 115', 'Ind AS 116', 'Ind AS 109'],
+        correctAnswer: 1
+      },
+      {
+        text: 'Ind AS 116 deals with:',
+        options: ['Financial Instruments', 'Leases', 'Revenue', 'Business Combinations'],
+        correctAnswer: 1
+      },
+      {
+        text: 'Which Ind AS is equivalent to IFRS 9?',
+        options: ['Ind AS 32', 'Ind AS 107', 'Ind AS 109', 'Ind AS 113'],
+        correctAnswer: 2
+      },
+      {
+        text: 'Fair Value Measurement is covered under:',
+        options: ['Ind AS 113', 'Ind AS 110', 'Ind AS 109', 'Ind AS 102'],
+        correctAnswer: 0
+      },
+      {
+        text: 'Which standard deals with Presentation of Financial Statements?',
+        options: ['Ind AS 1', 'Ind AS 7', 'Ind AS 10', 'Ind AS 12'],
+        correctAnswer: 0
+      }
+    ],
+    'Taxation': [
+      {
+        text: 'Which section of Income Tax Act provides deduction for payment of life insurance premium?',
+        options: ['Section 80C', 'Section 80D', 'Section 80G', 'Section 10(10D)'],
+        correctAnswer: 0
+      },
+      {
+        text: 'Which of the following incomes is exempt under section 10 of the Income Tax Act?',
+        options: ['Salary income', 'Agricultural income', 'Business income', 'Income from house property'],
+        correctAnswer: 1
+      },
+      {
+        text: 'TDS on salary is covered under which section?',
+        options: ['Section 192', 'Section 194C', 'Section 194J', 'Section 195'],
+        correctAnswer: 0
+      },
+      {
+        text: 'The due date for filing ITR-4 for non-audit cases is:',
+        options: ['July 31', 'September 30', 'October 31', 'November 30'],
+        correctAnswer: 0
+      },
+      {
+        text: 'Which of the following is not considered as a capital asset?',
+        options: ['Jewelry', 'Urban Land', 'Personal Car', 'Rural Agricultural Land'],
+        correctAnswer: 3
+      }
+    ],
+    'Corporate Law': [
+      {
+        text: 'Which of the following is NOT a type of company under the Companies Act, 2013?',
+        options: ['Private Company', 'Public Company', 'One Person Company', 'Partnership Company'],
+        correctAnswer: 3
+      },
+      {
+        text: 'Minimum number of directors required in a public company is:',
+        options: ['1', '2', '3', '7'],
+        correctAnswer: 2
+      },
+      {
+        text: 'Who appoints the first auditor of a company?',
+        options: ['Shareholders', 'Board of Directors', 'Managing Director', 'Company Secretary'],
+        correctAnswer: 1
+      },
+      {
+        text: 'The quorum for a public company with more than 5000 members is:',
+        options: ['5 members', '15 members', '30 members', '100 members'],
+        correctAnswer: 2
+      },
+      {
+        text: 'Corporate Social Responsibility is mandatory for companies with:',
+        options: ['Net worth ≥ ₹500 crore', 'Turnover ≥ ₹1000 crore', 'Net profit ≥ ₹5 crore', 'Any of these'],
+        correctAnswer: 3
+      }
+    ],
+    'Auditing': [
+      {
+        text: 'Which of the following is NOT an audit assertion for classes of transactions?',
+        options: ['Occurrence', 'Accuracy', 'Classification', 'Ownership'],
+        correctAnswer: 3
+      },
+      {
+        text: 'Audit sampling is covered under which Standard on Auditing?',
+        options: ['SA 500', 'SA 520', 'SA 530', 'SA 550'],
+        correctAnswer: 2
+      },
+      {
+        text: 'Which of the following is NOT a type of audit opinion?',
+        options: ['Unqualified opinion', 'Qualified opinion', 'Adverse opinion', 'Speculative opinion'],
+        correctAnswer: 3
+      },
+      {
+        text: 'Audit working papers should be retained for a minimum period of:',
+        options: ['3 years', '5 years', '7 years', '10 years'],
+        correctAnswer: 3
+      },
+      {
+        text: 'An auditor obtains audit evidence primarily through:',
+        options: ['Inquiry alone', 'Management representations', 'Third party confirmations only', 'A combination of procedures'],
+        correctAnswer: 3
+      }
+    ]
+  };
+  
+  // Use default questions for subjects not in our predefined list
+  if (!subjectQuestions[subject]) {
+    return Array(count).fill(null);
+  }
+  
+  // Return up to 'count' questions for the subject
+  return subjectQuestions[subject].slice(0, count);
+}
+
+/**
+ * Provide varied subjective questions based on subject
+ */
+function getVariedSubjectives(subject: string, count: number): string[] {
+  const subjectQuestions: Record<string, string[]> = {
+    'Accounting Standards': [
+      'Explain the key differences between Ind AS 17 and Ind AS 116 on Leases with suitable examples.',
+      'Discuss the recognition and measurement principles of financial instruments under Ind AS 109.',
+      'Explain the concept of control as per Ind AS 110 and how it differs from AS 21.',
+      'Discuss the expected credit loss model under Ind AS 109 with examples.',
+      'Explain the five-step model for revenue recognition under Ind AS 115.'
+    ],
+    'Taxation': [
+      'Explain the concept of Minimum Alternate Tax (MAT) under the Income Tax Act and its implications for companies.',
+      'Discuss the provisions related to TDS and TCS with recent amendments.',
+      'Explain the concept of capital gains with examples and computation methodology.',
+      'Discuss the assessment procedure under Income Tax Act 1961.',
+      'Explain various deductions available under Chapter VI-A of the Income Tax Act.'
+    ],
+    'Corporate Law': [
+      'Explain the doctrine of ultra vires and its implications on company contracts with reference to relevant case laws.',
+      'Discuss the provisions relating to Corporate Social Responsibility under the Companies Act, 2013.',
+      'Explain the role and responsibilities of Independent Directors under the Companies Act, 2013.',
+      'Discuss the provisions relating to related party transactions under the Companies Act, 2013.',
+      'Explain the concept of One Person Company and its advantages and limitations.'
+    ],
+    'Auditing': [
+      'Discuss the audit procedures to verify Property, Plant and Equipment as per SA 500.',
+      'Explain the concept of audit risk and its components with examples.',
+      'Discuss the auditor\'s responsibility towards fraud detection as per SA 240.',
+      'Explain the audit documentation requirements as per SA 230.',
+      'Discuss the concept of materiality in audit planning and execution as per SA 320.'
+    ]
+  };
+  
+  // Use default questions for subjects not in our predefined list
+  if (!subjectQuestions[subject]) {
+    return Array(count).fill(null);
+  }
+  
+  // Return up to 'count' questions for the subject
+  return subjectQuestions[subject].slice(0, count);
+}
+
+/**
+ * Get a default MCQ when no specific subject question is available
+ */
+function getDefaultMCQ(subject: string, index: number): {text: string, options: string[], correctAnswer: number} {
+  return {
+    text: `${subject} question ${index + 1}: Which of the following statements is correct?`,
+    options: ['Option A is correct', 'Option B is correct', 'Option C is correct', 'Option D is correct'],
+    correctAnswer: 0
+  };
 }
 
 /**

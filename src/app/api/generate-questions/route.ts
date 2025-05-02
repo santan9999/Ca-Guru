@@ -32,10 +32,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate immediate fallback questions for fast initial response
+    // Check if this is a refresh request (client refreshing to get real questions)
+    const isRefresh = request.headers.get('x-is-refresh') === 'true';
+    
+    // For refresh requests, prioritize getting cached questions
+    if (isRefresh) {
+      // Try to get the cached real questions
+      const questions = await generateQuestionsForTest(
+        subject,
+        difficulty,
+        examLevel,
+        questionCount,
+        paperType
+      );
+      
+      return NextResponse.json({ 
+        questions,
+        isGenerating: false
+      });
+    }
+
+    // For initial requests, generate immediate fallback questions
     console.log(`Generating ${questionCount} questions for ${subject} test...`);
     
-    // Generate fallback questions immediately
+    // Generate fallback questions immediately with variety
     const fallbackQuestions = generateMultipleFallbackQuestions(
       subject, 
       difficulty, 
@@ -45,18 +65,18 @@ export async function POST(request: NextRequest) {
     );
     
     // Start the async generation of real questions
-    const questionsPromise = generateQuestionsForTest(
+    generateQuestionsForTest(
       subject,
       difficulty,
       examLevel,
       questionCount,
       paperType
-    );
+    ).catch(error => console.error('Background question generation error:', error));
     
     // Return the fallback questions right away for faster response
     return NextResponse.json({ 
       questions: fallbackQuestions,
-      message: "Questions generated successfully. These are initial fallback questions. Refresh in a moment for AI-generated questions."
+      isGenerating: true
     });
     
   } catch (error) {

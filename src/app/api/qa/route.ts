@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { query } from '@/lib/db';
+import { executeQuery } from '@/lib/db';
 // Import the initialization module to ensure database is connected
 import '../_init';
 // Import DeepSeek API utilities
@@ -45,13 +45,13 @@ export async function POST(req: NextRequest) {
     if (isDatabaseAvailable) {
       try {
         // First, ensure user exists in the database
-        await query(
+        await executeQuery(
           'INSERT INTO users (id) VALUES ($1) ON CONFLICT (id) DO NOTHING',
           [userId]
         );
         
         // Then insert the query
-        await query(
+        await executeQuery(
           'INSERT INTO user_queries (user_id, subject, query, response) VALUES ($1, $2, $3, $4)',
           [userId, subject, userQuery, aiResponse]
         );
