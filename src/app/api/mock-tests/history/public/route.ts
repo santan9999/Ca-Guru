@@ -42,21 +42,11 @@ export async function GET(req: NextRequest) {
       console.log(`Found ${userHistory.length} test history entries for user: ${userId}`);
       return NextResponse.json(userHistory);
     } else {
-      console.log('Fetching all public test history');
-      
-      // Get all test history from the database using safeDbOperation
-      const allHistory = await safeDbOperation(
-        async () => await getAllTestHistory(),
-        []
+      // Remove admin functionality - don't allow fetching all test history
+      return NextResponse.json(
+        { error: 'UserId is required' },
+        { status: 400 }
       );
-      
-      if (!allHistory || allHistory.length === 0) {
-        console.log('No test history found');
-        return NextResponse.json([]);
-      }
-
-      console.log(`Found ${allHistory.length} total test history entries`);
-      return NextResponse.json(allHistory);
     }
   } catch (error) {
     console.error('Error retrieving public test history:', error);

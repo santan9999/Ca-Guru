@@ -16,7 +16,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   
   if (!userId) {
     console.warn('Missing userId parameter for test history detail');
-    return NextResponse.json({ error: 'UserId is required' }, { status: 400 });
+    return NextResponse.json({ error: 'UserId is required', message: 'User authentication required. Please sign in to view test history.' }, { status: 400 });
   }
 
   const testHistoryId = params.id;

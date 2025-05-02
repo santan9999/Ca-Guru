@@ -42,6 +42,14 @@ export default function TestHistoryDetailPage() {
       setLoading(true);
       setError(null);
       
+      // Check if userId is available
+      if (!userId) {
+        console.warn('User ID not available for test history detail fetch');
+        setError('User authentication required. Please sign in to view test history.');
+        setLoading(false);
+        return;
+      }
+      
       try {
         // Use the public API endpoint with userId parameter
         const response = await fetch(`/api/mock-tests/history/${testHistoryId}?userId=${userId}`, {
@@ -52,32 +60,36 @@ export default function TestHistoryDetailPage() {
         });
 
         if (!response.ok) {
-          if (response.status === 401) {
-            setError('You must be logged in to view test history');
+          // Try to get detailed error message from response
+          const errorData = await response.json().catch(() => ({}));
+          const errorMessage = errorData.message || errorData.error;
+          
+          if (response.status === 401 || response.status === 400) {
+            setError(errorMessage || 'You must be logged in to view test history');
             setLoading(false);
             return;
           }
           
           if (response.status === 404) {
-            setError('Test history not found');
+            setError(errorMessage || 'Test history not found');
             setLoading(false);
             return;
           }
           
-          throw new Error(`Failed to fetch test history: ${response.status}`);
+          throw new Error(errorMessage || `Failed to fetch test history: ${response.status}`);
         }
 
         const data = await response.json();
         setTestHistory(data);
       } catch (err) {
         console.error('Error fetching test history detail:', err);
-        setError('Failed to load test history detail. Please try again later.');
+        setError(err instanceof Error ? err.message : 'Failed to load test history detail. Please try again later.');
       } finally {
         setLoading(false);
       }
     };
 
-    if (testHistoryId && userId) {
+    if (testHistoryId) {
       fetchTestHistoryDetail();
     }
   }, [testHistoryId, userId]);
