@@ -77,6 +77,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ 
       questions: fallbackQuestions,
       isGenerating: true
+    }, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
     });
     
   } catch (error) {

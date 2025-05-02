@@ -271,33 +271,6 @@ export function generateMultipleFallbackQuestions(
  */
 function getVariedMCQs(subject: string, count: number): Array<{text: string, options: string[], correctAnswer: number}> {
   const subjectQuestions: Record<string, Array<{text: string, options: string[], correctAnswer: number}>> = {
-    'Accounting Standards': [
-      {
-        text: 'Which Ind AS deals with Revenue Recognition?',
-        options: ['Ind AS 101', 'Ind AS 115', 'Ind AS 116', 'Ind AS 109'],
-        correctAnswer: 1
-      },
-      {
-        text: 'Ind AS 116 deals with:',
-        options: ['Financial Instruments', 'Leases', 'Revenue', 'Business Combinations'],
-        correctAnswer: 1
-      },
-      {
-        text: 'Which Ind AS is equivalent to IFRS 9?',
-        options: ['Ind AS 32', 'Ind AS 107', 'Ind AS 109', 'Ind AS 113'],
-        correctAnswer: 2
-      },
-      {
-        text: 'Fair Value Measurement is covered under:',
-        options: ['Ind AS 113', 'Ind AS 110', 'Ind AS 109', 'Ind AS 102'],
-        correctAnswer: 0
-      },
-      {
-        text: 'Which standard deals with Presentation of Financial Statements?',
-        options: ['Ind AS 1', 'Ind AS 7', 'Ind AS 10', 'Ind AS 12'],
-        correctAnswer: 0
-      }
-    ],
     'Taxation': [
       {
         text: 'Which section of Income Tax Act provides deduction for payment of life insurance premium?',
@@ -323,6 +296,108 @@ function getVariedMCQs(subject: string, count: number): Array<{text: string, opt
         text: 'Which of the following is not considered as a capital asset?',
         options: ['Jewelry', 'Urban Land', 'Personal Car', 'Rural Agricultural Land'],
         correctAnswer: 3
+      },
+      {
+        text: 'What is the threshold limit for tax audit under section 44AB for a trader?',
+        options: ['₹1 crore', '₹2 crore', '₹5 crore', '₹10 crore'],
+        correctAnswer: 1
+      },
+      {
+        text: 'Long-term capital gains on sale of listed equity shares are taxed at:',
+        options: ['10%', '15%', '20% with indexation', '30%'],
+        correctAnswer: 0
+      },
+      {
+        text: 'Which form is used for filing TDS return for salary payments?',
+        options: ['Form 24Q', 'Form 26Q', 'Form 27Q', 'Form 16A'],
+        correctAnswer: 0
+      },
+      {
+        text: 'Which of the following is a direct tax?',
+        options: ['Income Tax', 'GST', 'Customs Duty', 'Excise Duty'],
+        correctAnswer: 0
+      },
+      {
+        text: 'For a resident individual, income received outside India is:',
+        options: ['Fully taxable in India', 'Exempt in India', 'Partially taxable in India', 'Taxable only if remitted to India'],
+        correctAnswer: 0
+      },
+      {
+        text: 'Which of the following is not a head of income under Income Tax Act?',
+        options: ['Income from Salary', 'Income from House Property', 'Income from Digital Assets', 'Income from Capital Gains'],
+        correctAnswer: 2
+      },
+      {
+        text: 'The surcharge applicable to domestic companies having total income exceeding ₹10 crore is:',
+        options: ['7%', '10%', '12%', '15%'],
+        correctAnswer: 2
+      },
+      {
+        text: 'Under which section is deduction for medical insurance premium available?',
+        options: ['Section 80C', 'Section 80D', 'Section 80G', 'Section 80TTA'],
+        correctAnswer: 1
+      },
+      {
+        text: 'The maximum amount eligible for deduction under section 80C is:',
+        options: ['₹1,00,000', '₹1,50,000', '₹2,00,000', '₹2,50,000'],
+        correctAnswer: 1
+      },
+      {
+        text: 'For calculating income from house property, the maximum interest deduction for self-occupied property is:',
+        options: ['₹30,000', '₹2,00,000', '₹1,50,000', 'No limit'],
+        correctAnswer: 1
+      }
+    ],
+    'Accounting Standards': [
+      {
+        text: 'Which Ind AS deals with Revenue Recognition?',
+        options: ['Ind AS 101', 'Ind AS 115', 'Ind AS 116', 'Ind AS 109'],
+        correctAnswer: 1
+      },
+      {
+        text: 'Ind AS 116 deals with:',
+        options: ['Financial Instruments', 'Leases', 'Revenue', 'Business Combinations'],
+        correctAnswer: 1
+      },
+      {
+        text: 'Which Ind AS is equivalent to IFRS 9?',
+        options: ['Ind AS 32', 'Ind AS 107', 'Ind AS 109', 'Ind AS 113'],
+        correctAnswer: 2
+      },
+      {
+        text: 'Fair Value Measurement is covered under:',
+        options: ['Ind AS 113', 'Ind AS 110', 'Ind AS 109', 'Ind AS 102'],
+        correctAnswer: 0
+      },
+      {
+        text: 'Which standard deals with Presentation of Financial Statements?',
+        options: ['Ind AS 1', 'Ind AS 7', 'Ind AS 10', 'Ind AS 12'],
+        correctAnswer: 0
+      },
+      {
+        text: 'Impairment of Assets is covered under:',
+        options: ['Ind AS 36', 'Ind AS 16', 'Ind AS 38', 'Ind AS 40'],
+        correctAnswer: 0
+      },
+      {
+        text: 'Which Ind AS deals with Consolidated Financial Statements?',
+        options: ['Ind AS 110', 'Ind AS 112', 'Ind AS 107', 'Ind AS 103'],
+        correctAnswer: 0
+      },
+      {
+        text: 'Property, Plant and Equipment is governed by:',
+        options: ['Ind AS 16', 'Ind AS 38', 'Ind AS 40', 'Ind AS 36'],
+        correctAnswer: 0
+      },
+      {
+        text: 'Statement of Cash Flows is covered under:',
+        options: ['Ind AS 7', 'Ind AS 1', 'Ind AS 10', 'Ind AS 8'],
+        correctAnswer: 0
+      },
+      {
+        text: 'Which Ind AS deals with Income Taxes?',
+        options: ['Ind AS 12', 'Ind AS 19', 'Ind AS 20', 'Ind AS 23'],
+        correctAnswer: 0
       }
     ],
     'Corporate Law': [
@@ -350,6 +425,31 @@ function getVariedMCQs(subject: string, count: number): Array<{text: string, opt
         text: 'Corporate Social Responsibility is mandatory for companies with:',
         options: ['Net worth ≥ ₹500 crore', 'Turnover ≥ ₹1000 crore', 'Net profit ≥ ₹5 crore', 'Any of these'],
         correctAnswer: 3
+      },
+      {
+        text: 'Which form is used for incorporation of a company?',
+        options: ['SPICe+ (INC-32)', 'DIR-3', 'AOC-4', 'MGT-7'],
+        correctAnswer: 0
+      },
+      {
+        text: 'Maximum number of members in a private company is:',
+        options: ['50', '100', '200', 'Unlimited'],
+        correctAnswer: 2
+      },
+      {
+        text: 'Which section of Companies Act deals with Related Party Transactions?',
+        options: ['Section 188', 'Section 149', 'Section 135', 'Section 92'],
+        correctAnswer: 0
+      },
+      {
+        text: 'Annual Return of a company is filed in:',
+        options: ['Form MGT-7', 'Form AOC-4', 'Form DIR-12', 'Form INC-22'],
+        correctAnswer: 0
+      },
+      {
+        text: 'Which of the following is a Key Managerial Personnel?',
+        options: ['Independent Director', 'Statutory Auditor', 'Company Secretary', 'Both A and C'],
+        correctAnswer: 2
       }
     ],
     'Auditing': [
@@ -377,6 +477,31 @@ function getVariedMCQs(subject: string, count: number): Array<{text: string, opt
         text: 'An auditor obtains audit evidence primarily through:',
         options: ['Inquiry alone', 'Management representations', 'Third party confirmations only', 'A combination of procedures'],
         correctAnswer: 3
+      },
+      {
+        text: 'Which SA deals with Audit Planning?',
+        options: ['SA 300', 'SA 200', 'SA 240', 'SA 315'],
+        correctAnswer: 0
+      },
+      {
+        text: 'The primary responsibility for prevention and detection of fraud rests with:',
+        options: ['Auditor', 'Management', 'Audit Committee', 'Shareholders'],
+        correctAnswer: 1
+      },
+      {
+        text: 'Which of the following is NOT a component of internal control?',
+        options: ['Control environment', 'Risk assessment', 'Control activities', 'Audit sampling'],
+        correctAnswer: 3
+      },
+      {
+        text: 'Materiality for financial statements as a whole is addressed in:',
+        options: ['SA 320', 'SA 330', 'SA 450', 'SA 500'],
+        correctAnswer: 0
+      },
+      {
+        text: 'Which of the following is NOT a substantive procedure?',
+        options: ['Analytical procedures', 'Tests of details', 'Test of controls', 'External confirmation'],
+        correctAnswer: 2
       }
     ]
   };
@@ -482,58 +607,40 @@ export async function generateQuestionsForTest(
     return cachedData.questions.slice(0, questionCount);
   }
   
-  // Generate immediate fallback questions to return quickly
-  const fallbackQuestions = generateMultipleFallbackQuestions(
-    subject, difficulty, examLevel, questionCount, paperType
-  );
+  console.log(`Generating ${questionCount} new AI questions for ${subject}`);
   
-  // Set fallback questions in cache with current timestamp
-  questionCache[cacheKey] = {
-    questions: fallbackQuestions,
-    timestamp: Date.now()
-  };
+  // Check if DeepSeek API is available
+  if (!isDeepSeekAvailable) {
+    console.warn('DeepSeek API not available, generating fallback questions');
+    const fallbackQuestions = generateMultipleFallbackQuestions(
+      subject, difficulty, examLevel, questionCount, paperType
+    );
+    console.timeEnd('Question generation time');
+    return fallbackQuestions;
+  }
   
-  // Start asynchronous generation of real questions
-  generateRealQuestionsAsync(subject, difficulty, examLevel, questionCount, paperType, cacheKey)
-    .catch(error => console.error('Background question generation error:', error));
+  // Determine the distribution of question types based on paper type
+  let mcqCount = 0;
+  let subjectiveCount = 0;
   
-  // Return fallback questions immediately for fast response
-  console.timeEnd('Question generation time');
-  return fallbackQuestions;
-}
-
-/**
- * Generate real questions asynchronously and update cache
- */
-async function generateRealQuestionsAsync(
-  subject: string,
-  difficulty: 'Easy' | 'Medium' | 'Hard',
-  examLevel: 'Foundation' | 'Intermediate' | 'Final',
-  questionCount: number,
-  paperType: 'Subjective' | 'Objective' | 'Mixed',
-  cacheKey: string
-): Promise<void> {
+  switch (paperType) {
+    case 'Objective':
+      mcqCount = questionCount;
+      break;
+    case 'Subjective':
+      subjectiveCount = questionCount;
+      break;
+    case 'Mixed':
+      // For mixed papers, distribute questions with more weight to MCQs
+      mcqCount = Math.ceil(questionCount * 0.7); // 70% MCQs
+      subjectiveCount = questionCount - mcqCount; // 30% Subjective
+      break;
+  }
+  
+  // Results array
+  const generatedQuestions: Question[] = [];
+  
   try {
-    const realQuestions: Question[] = [];
-    
-    // Determine the distribution of question types based on paper type
-    let mcqCount = 0;
-    let subjectiveCount = 0;
-    
-    switch (paperType) {
-      case 'Objective':
-        mcqCount = questionCount;
-        break;
-      case 'Subjective':
-        subjectiveCount = questionCount;
-        break;
-      case 'Mixed':
-        // For mixed papers, distribute questions with more weight to MCQs
-        mcqCount = Math.ceil(questionCount * 0.7); // 70% MCQs
-        subjectiveCount = questionCount - mcqCount; // 30% Subjective
-        break;
-    }
-    
     // Generate MCQ questions in smaller batches with parallel processing
     if (mcqCount > 0) {
       const batchSize = 2; // Small batch size
@@ -545,17 +652,21 @@ async function generateRealQuestionsAsync(
           (_, j) => generateQuestion(subject, difficulty, examLevel, 'MCQ', i + j)
         );
         
-        // Process batch in parallel
-        const batchResults = await Promise.all(batch);
-        realQuestions.push(...batchResults);
-        
-        // Update the cache after each batch
-        questionCache[cacheKey] = {
-          questions: [...realQuestions],
-          timestamp: Date.now()
-        };
-        
-        console.log(`Generated batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(mcqCount/batchSize)} of MCQ questions`);
+        try {
+          // Process batch in parallel
+          const batchResults = await Promise.all(batch);
+          generatedQuestions.push(...batchResults);
+          
+          console.log(`Generated batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(mcqCount/batchSize)} of MCQ questions`);
+        } catch (error) {
+          console.error(`Error generating batch of MCQ questions:`, error);
+          // Add fallback questions for this batch
+          for (let j = 0; j < Math.min(batchSize, mcqCount - i); j++) {
+            generatedQuestions.push(
+              generateFallbackQuestion(subject, difficulty, examLevel, 'MCQ', i + j, 'Batch generation failed')
+            );
+          }
+        }
         
         // Add a small delay between batches
         if (i + batchSize < mcqCount) {
@@ -567,16 +678,17 @@ async function generateRealQuestionsAsync(
     // Generate subjective questions one at a time
     if (subjectiveCount > 0) {
       for (let i = 0; i < subjectiveCount; i++) {
-        const question = await generateQuestion(subject, difficulty, examLevel, 'Subjective', mcqCount + i);
-        realQuestions.push(question);
-        
-        // Update the cache after each question
-        questionCache[cacheKey] = {
-          questions: [...realQuestions],
-          timestamp: Date.now()
-        };
-        
-        console.log(`Generated subjective question ${i + 1}/${subjectiveCount}`);
+        try {
+          const question = await generateQuestion(subject, difficulty, examLevel, 'Subjective', mcqCount + i);
+          generatedQuestions.push(question);
+          console.log(`Generated subjective question ${i + 1}/${subjectiveCount}`);
+        } catch (error) {
+          console.error(`Error generating subjective question ${i + 1}:`, error);
+          // Add fallback question
+          generatedQuestions.push(
+            generateFallbackQuestion(subject, difficulty, examLevel, 'Subjective', mcqCount + i, 'Generation failed')
+          );
+        }
         
         // Add a small delay between questions
         if (i + 1 < subjectiveCount) {
@@ -585,9 +697,27 @@ async function generateRealQuestionsAsync(
       }
     }
     
-    console.log(`Background generation complete: ${realQuestions.length} questions for ${subject}`);
+    // Save to cache if we have generated any questions
+    if (generatedQuestions.length > 0) {
+      questionCache[cacheKey] = {
+        questions: generatedQuestions,
+        timestamp: Date.now()
+      };
+    }
+    
+    console.log(`Successfully generated ${generatedQuestions.length} questions for ${subject}`);
+    console.timeEnd('Question generation time');
+    return generatedQuestions;
     
   } catch (error) {
-    console.error('Error in background question generation:', error);
+    console.error('Error in AI question generation:', error);
+    
+    // If AI generation completely fails, use fallback questions
+    console.warn('Using fallback questions due to AI generation failure');
+    const fallbackQuestions = generateMultipleFallbackQuestions(
+      subject, difficulty, examLevel, questionCount, paperType
+    );
+    console.timeEnd('Question generation time');
+    return fallbackQuestions;
   }
 }

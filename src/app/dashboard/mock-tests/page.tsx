@@ -164,19 +164,67 @@ export default function MockTestsPage() {
   const handleStartTest = async (templateId: string) => {
     try {
       setLoading(true);
+      setError(null); // Clear any previous errors
+      
       // Request a new test to be generated from the template
-      const response = await fetch(`/api/mock-tests?templateId=${templateId}`);
+      const response = await fetch(`/api/mock-tests?templateId=${templateId}`, {
+        method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      
       if (!response.ok) {
-        throw new Error('Failed to generate test');
+        // Try to get more detailed error information
+        let errorMessage = 'Failed to generate test';
+        try {
+          const errorData = await response.json();
+          if (errorData && errorData.error) {
+            errorMessage = `Error: ${errorData.error}`;
+            console.error('Server error details:', errorData);
+          }
+        } catch (e) {
+          // If we can't parse JSON, use status text
+          errorMessage = `Error: ${response.status} ${response.statusText}`;
+          console.error('Failed to parse error response:', e);
+        }
+        throw new Error(errorMessage);
       }
+      
       const test = await response.json();
+      
+      // Verify that the test has questions
+      if (!test || !test.questions) {
+        throw new Error('The test response format is invalid. Please try again.');
+      }
+      
+      if (test.questions.length === 0) {
+        throw new Error('The generated test has no questions. Please try again.');
+      }
+      
+      // Log detailed information for debugging
+      console.log(`Test loaded successfully: ${test.id}`, {
+        title: test.title,
+        subject: test.subject,
+        questionCount: test.questions.length,
+        firstQuestion: test.questions[0] ? {
+          id: test.questions[0].id,
+          hasOptions: !!test.questions[0].options,
+          optionsCount: test.questions[0].options?.length || 0
+        } : 'No questions'
+      });
+      
+      // Success - set the active test
       setActiveTest(test);
       setTimeLeft(test.duration * 60); // Convert minutes to seconds
       setAnswers({});
       setStartTime(new Date());
     } catch (err) {
-      setError('Error loading test. Please try again.');
-      console.error(err);
+      // More informative error message
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      console.error('Test generation error:', err);
+      setError(`Error loading test: ${errorMessage}. Please try again or select a different test.`);
     } finally {
       setLoading(false);
     }
@@ -358,12 +406,21 @@ export default function MockTestsPage() {
           <div className="space-y-8 mb-8">
             {getCurrentQuestions().map((question, qIndex) => {
               const globalIndex = (currentPage - 1) * questionsPerPage + qIndex;
+              
+              // Log question details for debugging
+              console.log(`Question ${globalIndex + 1}:`, {
+                id: question.id,
+                text: question.text, 
+                hasOptions: !!question.options,
+                optionsCount: question.options?.length || 0
+              });
+              
               return (
                 <div key={question.id} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                   <div className="font-medium mb-4">
                     {globalIndex + 1}. {question.text}
                   </div>
-                  {question.options ? (
+                  {question.options && question.options.length > 0 ? (
                     <div className="space-y-2">
                       {question.options.map((option, oIndex) => (
                         <div 
@@ -374,7 +431,7 @@ export default function MockTestsPage() {
                             : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50'
                           }`}
                         >
-                          {option}
+                          {option || `Option ${oIndex + 1}`}
                         </div>
                       ))}
                     </div>

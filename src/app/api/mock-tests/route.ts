@@ -492,46 +492,84 @@ function shuffleArray<T>(array: T[]): T[] {
   return shuffled;
 }
 
+// Function to safely transform AI-generated questions to the correct type
+function transformToQuestionType(questions: any[]): Question[] {
+  return questions.map(q => {
+    // Determine the correct question type
+    const questionType: QuestionType = q.type === 'Subjective' ? 'Subjective' : 'MCQ';
+    
+    // Return a properly typed question object
+    return {
+      id: q.id || generateUniqueId('q'),
+      text: q.text || 'Unknown question',
+      type: questionType,
+      options: q.options,
+      correctAnswer: q.correctAnswer,
+      isCompulsory: q.isCompulsory || false,
+      marks: q.marks || (questionType === 'MCQ' ? 1 : 16)
+    };
+  });
+}
+
 // Function to generate a test with AI-generated questions based on CA exam pattern
 async function generateTest(templateId: string): Promise<MockTest | null> {
   const template = testTemplates[templateId];
-  if (!template) return null;
+  if (!template) {
+    console.error(`Template not found: ${templateId}`);
+    return null;
+  }
   
   try {
     // Generate a unique ID for the test
     const testId = generateUniqueId(templateId);
     
-    // Generate questions using AI based on test parameters
+    // Try to generate AI questions
     console.log(`Generating ${template.questionCount} questions for ${template.subject} test...`);
-    const questions = await generateQuestionsForTest(
-      template.subject,
-      template.difficulty,
-      template.examLevel,
-      template.questionCount,
-      template.paperType
-    );
     
-    // If no questions were generated, fall back to static question banks
-    if (!questions || questions.length === 0) {
-      console.warn('AI question generation failed, falling back to static question banks');
-      return generateStaticTest(templateId);
+    try {
+      // Generate AI questions
+      const aiQuestions = await generateQuestionsForTest(
+        template.subject,
+        template.difficulty,
+        template.examLevel,
+        template.questionCount,
+        template.paperType
+      );
+      
+      // If AI questions were successfully generated, use them
+      if (aiQuestions && aiQuestions.length > 0) {
+        console.log(`Successfully generated ${aiQuestions.length} AI questions`);
+        
+        // Transform AI questions to ensure they match the Question type
+        const typedQuestions = transformToQuestionType(aiQuestions);
+        
+        const newTest: MockTest = {
+          id: testId,
+          title: template.title,
+          subject: template.subject,
+          duration: template.duration,
+          questionCount: typedQuestions.length,
+          difficulty: template.difficulty,
+          examLevel: template.examLevel,
+          paperType: template.paperType,
+          questions: typedQuestions
+        };
+        
+        // Store the test for future use
+        mockTests[testId] = newTest;
+        
+        return newTest;
+      } else {
+        console.warn('AI generated zero questions, but we need questions for the test');
+        throw new Error('AI question generation returned empty results');
+      }
+    } catch (aiError) {
+      console.warn('AI question generation failed:', aiError);
+      throw new Error(`Failed to generate AI questions: ${aiError instanceof Error ? aiError.message : String(aiError)}`);
     }
-    
-    return {
-      id: testId,
-      title: template.title,
-      subject: template.subject,
-      duration: template.duration,
-      questionCount: questions.length,
-      difficulty: template.difficulty,
-      examLevel: template.examLevel,
-      paperType: template.paperType,
-      questions: questions
-    };
   } catch (error) {
-    console.error('Error generating AI questions:', error);
-    // Fall back to static question banks if AI generation fails
-    return generateStaticTest(templateId);
+    console.error('Error in test generation:', error);
+    throw error; // Propagate the error to the route handler
   }
 }
 
@@ -587,18 +625,18 @@ function generateStaticTest(templateId: string): MockTest | null {
       
       if (mcqBank.length < mcqCount || subjBank.length < subjCount) return null;
       
-      // Get MCQs
+      // Get MCQs with explicit type
       const selectedMCQs = shuffleArray(mcqBank)
         .slice(0, mcqCount)
-        .map(q => ({ ...q, type: 'MCQ' }));
+        .map(q => ({ ...q, type: 'MCQ' as QuestionType }));
       
       // Get subjective questions with first one as compulsory
       const shuffledSubj = shuffleArray(subjBank).slice(0, subjCount);
       const selectedSubj = shuffledSubj.map((q, index) => {
         if (index === 0) {
-          return { ...q, isCompulsory: true };
+          return { ...q, isCompulsory: true, type: 'Subjective' as QuestionType };
         }
-        return q;
+        return { ...q, type: 'Subjective' as QuestionType };
       });
       
       // Combine both types
@@ -677,50 +715,80 @@ export async function GET(req: NextRequest) {
   // If templateId is provided, generate a new test from that template
   if (templateId) {
     try {
-      const newTest = await generateTest(templateId);
-      if (!newTest) {
-        return NextResponse.json({ error: 'Failed to generate test from template' }, { status: 400 });
+      console.log(`Attempting to generate test from template: ${templateId}`);
+      
+      // Check if template exists
+      if (!testTemplates[templateId]) {
+        console.error(`Template not found: ${templateId}`);
+        return NextResponse.json(
+          { error: `Template not found: ${templateId}` },
+          { status: 404 }
+        );
       }
       
-      // Store the generated test in memory
-      mockTests[newTest.id] = newTest;
-      
-      // If database is available, try to store it there too (in a real implementation)
-      // This is where you would add database persistence in a production app
-      await safeDbOperation(async () => {
-        // Example: await query('INSERT INTO mock_tests (id, data) VALUES ($1, $2)', [newTest.id, JSON.stringify(newTest)]);
-        return true;
-      }, false);
-      
-      // Create a copy without revealing correct answers
-      const testForUser = {
-        ...newTest,
-        questions: newTest.questions.map(q => {
-          if (q.type === 'MCQ') {
-            return {
-              id: q.id,
-              text: q.text,
-              type: q.type,
-              options: q.options,
-              isCompulsory: q.isCompulsory,
-              marks: q.marks || 1 // Default 1 mark for MCQs
-            };
-          } else {
-            return {
-              id: q.id,
-              text: q.text,
-              type: q.type,
-              isCompulsory: q.isCompulsory,
-              marks: q.marks || 16 // Default 16 marks for subjective questions
-            };
-          }
-        })
-      };
-      
-      return NextResponse.json(testForUser);
-    } catch (error) {
-      console.error('Error generating test:', error);
-      return NextResponse.json({ error: 'Failed to generate test. Using fallback mechanism.' }, { status: 500 });
+      try {
+        const newTest = await generateTest(templateId);
+        if (!newTest) {
+          console.error(`Failed to generate test from template: ${templateId}`);
+          return NextResponse.json(
+            { error: 'Failed to generate test from template. The AI service may be unavailable.' },
+            { status: 500 }
+          );
+        }
+        
+        // Verify that the test has questions
+        if (!newTest.questions || newTest.questions.length === 0) {
+          console.error(`Generated test has no questions: ${templateId}`);
+          return NextResponse.json(
+            { error: 'Generated test has no questions. The AI service may not be functioning properly.' },
+            { status: 500 }
+          );
+        }
+        
+        // Store the generated test in memory
+        mockTests[newTest.id] = newTest;
+        console.log(`Successfully generated test: ${newTest.id} with ${newTest.questions.length} questions`);
+        
+        // Create a copy without revealing correct answers
+        const testForUser = {
+          ...newTest,
+          questions: newTest.questions.map(q => {
+            if (q.type === 'MCQ') {
+              return {
+                id: q.id,
+                text: q.text,
+                type: q.type,
+                options: q.options,
+                isCompulsory: q.isCompulsory,
+                marks: q.marks || 1 // Default 1 mark for MCQs
+              };
+            } else {
+              return {
+                id: q.id,
+                text: q.text,
+                type: q.type,
+                isCompulsory: q.isCompulsory,
+                marks: q.marks || 16 // Default 16 marks for subjective questions
+              };
+            }
+          })
+        };
+        
+        return NextResponse.json(testForUser);
+      } catch (error) {
+        console.error('Error generating test:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        return NextResponse.json(
+          { error: `Failed to generate AI test: ${errorMessage}. Please try again later.` },
+          { status: 500 }
+        );
+      }
+    } catch (outerError) {
+      console.error('Unexpected error in template handling:', outerError);
+      return NextResponse.json(
+        { error: 'An unexpected error occurred while processing your test request.' },
+        { status: 500 }
+      );
     }
   }
 

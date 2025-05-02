@@ -1,4 +1,4 @@
-import { query } from '@/lib/db';
+import { executeQuery as query } from '@/lib/db';
 
 // In-memory cache for mock tests
 const mockTests: Record<string, MockTest> = {};
